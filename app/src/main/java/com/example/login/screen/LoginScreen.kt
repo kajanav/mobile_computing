@@ -22,6 +22,8 @@ fun LoginScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var loginError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -83,14 +85,20 @@ fun LoginScreen(
                 )
                 Spacer(Modifier.padding(12.dp))
 
-                val scope = rememberCoroutineScope()
                 Button(
                     onClick = {
-                        scope.launch{
-                            val user = userDao.login(
-                                email,
-                                password
-                            )
+                        loginError = null
+                        if (email.isBlank() || password.isBlank()) {
+                            loginError = "Enter email and password"
+                        } else {
+                            scope.launch {
+                                val user = userDao.login(email.trim(), password)
+                                if (user != null) {
+                                    onLogin()
+                                } else {
+                                    loginError = "Invalid email or password"
+                                }
+                            }
                         }
                     },
                     shape = RoundedCornerShape(12.dp), // rounded corners
@@ -103,6 +111,14 @@ fun LoginScreen(
                     Text(text = "Login", color = Color.White, fontSize = 16.sp)
                 }
 
+                loginError?.let { message ->
+                    Spacer(Modifier.padding(8.dp))
+                    Text(
+                        text = message,
+                        color = Color.Red,
+                        fontSize = 14.sp
+                    )
+                }
 
                 TextButton(onClick = onRegisterClick) {
                     Text("Go to Register", color = Color.Blue, fontWeight = FontWeight.Bold)
